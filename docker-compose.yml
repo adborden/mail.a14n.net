@@ -1,6 +1,6 @@
 services:
   mailserver:
-    image: ghcr.io/docker-mailserver/docker-mailserver:15
+    image: ghcr.io/docker-mailserver/docker-mailserver:16
     container_name: mailserver
     # Provide the FQDN of your mail server here (Your DNS MX record should point to this value)
     hostname: mail-a.a14n.net
@@ -21,7 +21,7 @@ services:
       - /mnt/data/mail/docker-data/dms/mail-state/:/var/mail-state/
       - /mnt/data/mail/docker-data/dms/mail-logs/:/var/log/mail/
       - /mnt/data/mail/docker-data/dms/config/:/tmp/docker-mailserver/
-      - /mnt/data/mail/docker-data/dms/config/dovecot/fts-xapian-plugin.conf:/etc/dovecot/conf.d/10-plugin.conf:ro
+      - /mnt/data/mail/docker-data/dms/config/dovecot/fts-flatcurve-plugin.conf:/etc/dovecot/conf.d/90-fts-flatcurve.conf:ro
     restart: always
     stop_grace_period: 1m
     # Uncomment if using `ENABLE_FAIL2BAN=1`:
