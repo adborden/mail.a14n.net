@@ -19,7 +19,42 @@
       vars:
         packages:
           - docker.io
+          - docker-compose-v2
           - nginx
+
+    - name: Copy fts config
+      ansible.builtin.copy:
+        src: config/dovecot/fts-flatcurve-plugin.conf
+        dest: "{{ docker_mailserver_hostpath }}/dms/config/dovecot/fts-flatcurve-plugin.conf"
+        mode: "0o644"
+      become: true
+
+    - name: Install docker-compose.yml
+      ansible.builtin.copy:
+        src: docker-compose.yml
+        dest: docker-mailserver/docker-compose.yml
+
+      register: docker_compose
+
+    - name: Pull container images
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_mailserver_project_dir }}"
+        pull: missing
+        state: present
+        wait: true
+
+    - name: Tear down DMS containers
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_mailserver_project_dir }}"
+        state: absent
+        wait: true
+      when: docker_compose is changed
+
+    - name: Start DMS containers
+      community.docker.docker_compose_v2:
+        project_src: "{{ docker_mailserver_project_dir }}"
+        state: present
+        wait: true
 
     - name: Install crontab for docker maintenance
       ansible.builtin.cron:
@@ -36,18 +71,18 @@
         minute: 0
         hour: 4
         job: /usr/bin/docker-compose --project-directory {{ docker_mailserver_project_dir }} exec mailserver doveadm fts optimize -A
-        state: present
+        state: absent # not required with flatcurve
 
     - name: Install crontab for letsencrypt
       ansible.builtin.cron:
         name: rewnew tls certificates
-        minute: 0
-        hour: 37
+        minute: 37
+        hour: 0
         job: >-
           /usr/bin/docker run --rm
-            -v /etc/letsencrypt:/etc/letsencrypt/
-            -v {{ docker_mailserver_hostpath }}/certbot/logs:/var/log/letsencrypt
-            -p 80:80 -p 443:443
-            certbot/certbot:latest
-            renew
+          -v /etc/letsencrypt:/etc/letsencrypt/
+          -v {{ docker_mailserver_hostpath }}/certbot/logs:/var/log/letsencrypt
+          -p 80:80 -p 443:443
+          certbot/certbot:latest
+          renew
         state: present

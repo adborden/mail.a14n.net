@@ -3,7 +3,7 @@
 .DEFAULT_GOAL := lint
 
 check:
-	uv run ansible-playbook site.yaml --check
+	uv run ansible-playbook site.yaml --check --diff
 
 deploy:
 	uv run ansible-playbook site.yaml --diff
