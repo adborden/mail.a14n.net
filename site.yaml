@@ -1,0 +1,53 @@
+---
+- name: Mail
+  hosts: mail
+  tasks:
+    - name: Mount data volume
+      ansible.posix.mount:
+        src: UUID=f233651f-5eb5-4233-b6d9-c9376b04818a
+        state: present
+        path: "{{ mail_data_dir }}"
+        fstype: ext4
+        opts: defaults,nofail,discard
+
+    - name: Install OS dependencies
+      ansible.builtin.apt:
+        cache_valid_time: "{{ 60 * 60 * 12 }}"
+        update_cache: true
+        name: "{{ packages }}"
+        state: present
+      vars:
+        packages:
+          - docker.io
+          - nginx
+
+    - name: Install crontab for docker maintenance
+      ansible.builtin.cron:
+        name: docker prune
+        minute: 0
+        hour: 2
+        weekday: 0
+        job: /usr/bin/docker system prune --all --volumes --force > /dev/null
+        state: present
+
+    - name: Install crontab for full text search maintenance
+      ansible.builtin.cron:
+        name: doveadm fts optimize
+        minute: 0
+        hour: 4
+        job: /usr/bin/docker-compose --project-directory {{ docker_mailserver_project_dir }} exec mailserver doveadm fts optimize -A
+        state: present
+
+    - name: Install crontab for letsencrypt
+      ansible.builtin.cron:
+        name: rewnew tls certificates
+        minute: 0
+        hour: 37
+        job: >-
+          /usr/bin/docker run --rm
+            -v /etc/letsencrypt:/etc/letsencrypt/
+            -v {{ docker_mailserver_hostpath }}/certbot/logs:/var/log/letsencrypt
+            -p 80:80 -p 443:443
+            certbot/certbot:latest
+            renew
+        state: present

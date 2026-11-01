@@ -1,0 +1,5 @@
+---
+docker_mailserver_hostpath: /mnt/data/mail/docker-data
+docker_mailserver_project_dir: /home/ubuntu/docker-mailserver
+
+mail_data_dir: /mnt/data
