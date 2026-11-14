@@ -33,7 +33,6 @@
       ansible.builtin.copy:
         src: docker-compose.yml
         dest: docker-mailserver/docker-compose.yml
-
       register: docker_compose
 
     - name: Pull container images
